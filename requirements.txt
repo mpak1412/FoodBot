@@ -1,0 +1,5 @@
+pyTelegramBotApi
+requests
+fake_useragent
+bs4
+pydantic
