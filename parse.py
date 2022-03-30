@@ -42,7 +42,8 @@ def parse_site(url):
         ingredients = []
         list_ingredients = item.find_all('span', {'class': 'list'})[0].find_all('a')
         for ingredient in list_ingredients:
-            ingredients.append(ingredient.text)
+            ingredients.append(ingredient.text.lower())
+            ingredients.sort()
 
         recipe_text = parse_page(item.div.a.get('href'))
 
