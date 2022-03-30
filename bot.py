@@ -1,10 +1,11 @@
 import telebot
 from telebot import types
 from search_recipe import search
+from core.settings import Settings
 
+settings = Settings()
 
-TOKEN = "5170186949:AAF2qfgd846wZRb2VFV0R9krT2jLtmFod14"
-bot = telebot.TeleBot(TOKEN, parse_mode=None)
+bot = telebot.TeleBot(settings.bot_token, parse_mode=None)
 
 
 @bot.message_handler(commands=['help', 'start'])
@@ -32,5 +33,5 @@ def get_products(message):
     # keyboard.add(button_dislike)
     # bot.send_message(message.chat.id, 'buttons', reply_markup=keyboard)
 
-
-bot.infinity_polling()
+if __name__ == "__main__":
+    bot.infinity_polling()
