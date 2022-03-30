@@ -1,10 +1,21 @@
 import telebot
 from telebot import types
 from search_recipe import search
+from core.settings import Settings
+from morphy import morphy
+import flask
+
+settings = Settings()
+WEBHOOK_URL_BASE = "https://{}:{}".format(settings.WEBHOOK_HOST, str(settings.WEBHOOK_PORT))
+WEBHOOK_URL_PATH = "/{}/".format(settings.bot_token)
 
 
-TOKEN = "5170186949:AAF2qfgd846wZRb2VFV0R9krT2jLtmFod14"
-bot = telebot.TeleBot(TOKEN, parse_mode=None)
+bot = telebot.TeleBot(settings.bot_token, parse_mode=None, threaded=False)
+
+bot.remove_webhook()
+bot.set_webhook(url=WEBHOOK_URL_BASE+WEBHOOK_URL_PATH)
+
+app = flask.Flask(__name__)
 
 count = 0
 
@@ -15,26 +26,31 @@ button_dislike = types.InlineKeyboardButton(text=b'\xF0\x9F\x91\x8E'.decode('UTF
 keyboard.add(button_dislike)
 
 
-@bot.message_handler(commands=['help', 'start'])
+@bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, """\
-    Привет! Напиши продукты - я подберу рецепт.\
+    bot.send_message(message.chat.id, """\
+    Привет! Я бот, который поможет тебе найти рецепт под ингредиенты, которые есть у тебя под рукой! Отправь мне продукты, а я подберу рецепт :).\
     """)
+
+
+@bot.message_handler(commands=['help'])
+def send_help(message):
+    bot.send_message(message.chat.id, """\
+    Чтобы начать подбор рецептов, необходимо отправить мне ингредиенты в сообщении.\n \
+    Если оценить рецепт кнопкой {}, то я буду подбирать новые рецепты под ваши запросы до тех пор, пока рецепты не закончатся.\n \
+    Если оценить рецепт кнопкой {}, то я перестану подбирать рецепты  и пожелаю приятного аппетита!\
+    """.format(b'\xF0\x9F\x91\x8E'.decode("UTF-8"), b'\xF0\x9F\x91\x8D'.decode("UTF-8")))
 
 
 @bot.message_handler(func=lambda m: True)
 def get_products(message, *args):
     global recipes
-    # global count
-    # recipes = search(message.text.replace(",", "").split())
     global count
-    # count = 0
     if len(args) != 0:
         count += 1
     else:
-        recipes = search(message.text.replace(",", "").split())
-    # print(recipes)
-    # schet = 0
+        morphy_text = morphy(message.text.replace(",", "").split())
+        recipes = search(morphy_text)
     try:
         mess = f"<b>Название</b>: \n{recipes[count][0]}\n<b>Ингредиенты</b>: \n{recipes[count][2]}\n<b>Рецепт</b>: \n{recipes[count][1]}"
         if len(mess) > 4096:
@@ -60,4 +76,20 @@ def callback_func(call):
         bot.send_message(call.message.chat.id, like_mess)
 
 
-bot.infinity_polling()
+@app.route(WEBHOOK_URL_PATH, methods=['POST'])
+def webhook():
+    if flask.request.headers.get('content-type') == 'application/json':
+        json_string = flask.request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return ''
+    else:
+        flask.abort(403)
+
+
+app.run(host=settings.WEBHOOK_HOST,
+        port=settings.WEBHOOK_PORT,
+        debug=True)
+
+# if __name__ == "__main__":
+#     bot.infinity_polling()

@@ -1,0 +1,7 @@
+build:
+  docker:
+    web: Dockerfile
+release:
+  image: web
+  command:
+    - bash -c 'python3 parse.py; wait; python3 bot.py'

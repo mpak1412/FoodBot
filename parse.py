@@ -65,7 +65,7 @@ def main():
     global name_db
     name_db = "recipe.db"
     create_database(name_db)
-    for i in range(1, 100):
+    for i in range(1, 10):
         url = f"https://www.povarenok.ru/recipes/~{i}"
         parse_site(url=url)
 

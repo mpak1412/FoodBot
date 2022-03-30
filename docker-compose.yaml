@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  app:
+    build: .
+    command: bash -c 'python3 parse.py; wait; python3 bot.py'
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/app/.
+    restart: on-failure
